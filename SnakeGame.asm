@@ -1,6 +1,6 @@
 ;****************************************************************************
 ;												                            *
-;				            ___The Flavi Snake Game__				                *		
+;				            ___The Flavi Snake Game__				        *		
 ;												                            *
 ;	            Trabalho realizado por:	Bruno Medeiros 71337                *
 ;												                            *
@@ -17,13 +17,12 @@
 ;												  							*                      
 ;****************************************************************************   
 
-org 100h
-       
+org 100h       
 
 ;## PARA FAZER ##    
 
 ;Implementar Comida na arena   
-;Timer para comida!!!!
+;Timer para comida!!!! 1s tem 18ticks no system clock
 
 
 JMP MENU
@@ -55,7 +54,10 @@ wait_time dw    0
 x_coord equ 49  ;constante que guarda o valor da coordenada x do limite direito da arena
 
 y_coord db 0  ;usada para o guardar o valor da coordenada y do limite baixo da arena que muda consoante a dificuldade
-               
+
+
+fruitx db 0
+fruity db 0               
                
 ;MENSAGENS DO JOGO   
 
@@ -66,8 +68,8 @@ main 	db  09h,"  _______ _             _____             _         ", 0dh,0ah
         db  09h,"    | |  | | | |  __/  ____) | | | | (_| |   <  __/ ", 0dh,0ah
         db  09h,"   _|_|_ |_| |_|\___| |_____/|_| |_|\__,_|_|\_\___| ", 0dh,0ah
         db  09h,"  / ____|                    | |                    ", 0dh,0ah
-        db  09h," | |  __  __ _ _ __ ___   ___| |                    ", 0dh,0ah
-        db  09h," | | |_ |/ _` | '_ ` _ \ / _ \ |                    ", 0dh,0ah
+        db  09h," | |  __  ____ _ __ ___   ___| |                    ", 0dh,0ah
+        db  09h," | | |_ |/ _  | '_ ` _ \ / _ \ |                    ", 0dh,0ah
         db  09h," | |__| | (_| | | | | | |  __/_|                    ", 0dh,0ah
         db  09h,"  \_____|\__,_|_| |_| |_|\___(_)                    ", 0dh,0ah ;codigo para movimentar o cursor para o inicio da proxima linha
 	    db  "Regras:",09h,"                                  ", 0dh,0ah 
@@ -309,7 +311,9 @@ MOV DL, 20
 MOV snake[0], DX
 
 ;DECREMENTAMOS PARA NAO ACONTECER NOVAMENTE ESTA INSTRUCAO
-DEC CX  
+DEC CX 
+
+call fruitgeneration;criacao de comida quando spawna a cabeca da cobra 
    
 
 
@@ -366,7 +370,6 @@ int     10h
 
 
 
-
 check_for_key:
 
 ;Verificamos se o utilizador carregou em alguma tecla
@@ -406,6 +409,8 @@ jb      check_for_key;Jump if first operand is Below second operand.if CF=1 then
 
 add     dx, 4
 mov     wait_time, dx  ;variavel wait time fica com o valor do registo dx
+
+MOV CX, 0
 
 jmp     GAME   
 
@@ -468,10 +473,9 @@ move_left:
   dec   al
   mov   b.snake[0], al  
   
-  
-  cmp   al, 0
-  jne   stop_move         
+  cmp   al, 0  
   je GameOver
+  jne   stop_move         
  
  ;DIREITA
  ;Movimenta a snake um pedaco a direita 
@@ -484,8 +488,8 @@ move_right:
   mov   b.snake[0], al  
   
   cmp al, x_coord
-  jne   stop_move
-  je GameOver  
+  je GameOver
+  jne   stop_move  
   
   
  ;PARA CIMA
@@ -497,8 +501,8 @@ move_up:
   mov   b.snake[1], al 
   
   cmp   al, 2 
+  je GameOver
   jne   stop_move 
-  je GameOver 
   
    
  ;PARA BAIXO
@@ -510,17 +514,123 @@ move_down:
   mov   b.snake[1], al
   
   cmp al,y_coord
-  jne stop_move
   je GameOver
-
+  jne   stop_move
 
 ;Instrucao que nos permite voltar acima.
-stop_move:
-  ret        
+stop_move:    
+
+  ;comparar se a cabeca da snake esta nas coordenadas
+  cmp ah, fruity
+  je CheckFood
+  
+ret
     
 move_snake endp;fim da funcao
-   
 
+
+
+
+
+
+
+;Esta funcao e chamada para gerar comida na arena
+
+fruitgeneration proc 
+
+
+;#####################  GERACAO NUMERO RANDOM PARA X   #############
+
+;get system time 
+
+MOV AH, 02CH
+INT 21H
+
+
+;dividir o valor obtido de DH por 3 uma vez que gera numeros entre 0 a 99
+MOV AX, DX
+
+MOV BX,3
+
+XOR DX, DX; DX=0
+
+DIV BX ; 0-99/ 10 onde o resto fica em AH  
+
+
+MOV BL, x_coord
+
+SUB BL, AH  
+
+DEC BL
+
+;Atribuimos esse valor como sendo coordenada x da comida
+MOV fruitx, BL
+                 
+                 
+                 
+                 
+;#####################  GERACAO NUMERO RANDOM PARA Y   #############
+;o y estara entre 4 e 23 logo so podemos gerar esses numeros
+;get system time 
+
+MOV AH, 02CH
+INT 21H
+
+
+;dividir o valor obtido de DH por 3 uma vez que gera numeros entre 0 a 99
+MOV AX, DX
+
+MOV BX,5
+
+XOR DX, DX; DX=0
+
+DIV BX ; 0-99/ 10 onde o resto fica em AH  
+
+                                                                   
+MOV BL, y_coord
+
+SUB BL, AH     
+
+DEC BL  ;condicao para nao gerar comida nos limites
+
+MOV fruity, BL
+
+;Definicao das coordenadas no registo
+MOV DL, fruitx
+MOV DH, fruity
+                                  
+;Funcao que define a posicao do cursor com base no registo DX
+MOV     AH, 02h  
+INT     10h
+
+MOV     AL, 0feh    ;simbolo usada para a cabeca da snake      
+MOV     BL, 0ah     ; determina a cor da cobra neste caso e vermelho claro
+MOV     CX, 1       ; numero de vezes que escreve o simbolo
+
+MOV     AH, 09h
+INT     10h
+
+
+DEC CX
+
+ret
+
+fruitgeneration endp
+
+
+
+
+CheckFood:
+
+cmp al, fruitx
+je AtributeFood
+ret
+
+
+
+AtributeFood:
+call fruitgeneration  
+ret
 
 
 
@@ -533,9 +643,13 @@ MOV AL, 03H
 MOV AH, 0
 INT 10H	
 
-MOV AH,9
+	
+MOV AH,9    
 LEA DX,GAME_OVER
 INT 21H   
+
+
+
 
 
 END         
