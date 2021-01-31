@@ -1,4 +1,4 @@
-# Snake Game
+# Snake Game :snake:	
 
 **This program was made using Emu8086 and written in assembly language.** 
 
