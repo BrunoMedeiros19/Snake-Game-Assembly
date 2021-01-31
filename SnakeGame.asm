@@ -1,6 +1,6 @@
 ;****************************************************************************
 ;												                            *
-;				            ___The Flavi Snake Game__				        *		
+;				      ___The Flavi Snake Game__				                *		
 ;												                            *
 ;	            Trabalho realizado por:	Bruno Medeiros 71337                *
 ;												                            *
@@ -8,22 +8,31 @@
 ;												  							*
 ;				            Fases do Jogo:					  			    *
 ;												  							*
-;	1: O jogador entra e pressiona para comecar   							*
+;	1: O jogador entra e seleciona uma arena para comecar   				*
 ;   2: Usa as Arrows UP,DOWN,LEFT e RIGHT para se movimentar   				*
 ;	3: Cada vez que acerte numa comida outra e gerada		                *				  
-;	4:Se acertar na parede ou nele proprio perde e mostra a pontuacao.		*									  
+;	4: Se acertar na parede ou nele proprio perde e mostra a pontuacao.		*									  
 ;												  							*
 ;												  							*
 ;												  							*                      
 ;****************************************************************************   
 
-
-;** PARA FAZER **  
-  
-;verificar bugs de geracao de comida... 
-;pensar em maneiras de enriquecer o jogo (dificuldades do jogo -> ver como posso incluir isso didaticamente)
-
-
+;****************************************************************************
+;                                                                           *
+;       Coisas que podem ser melhoradas/implementadas no futuro             *
+;                                                                           *
+;1. Uma vez que a variavel s_size que e o tamanho da cobra foi definida como*  
+;   uma constante, a snake nao aumenta de tamanho quando come o que poderia * 
+;   ser algo a implementar no futuro.                                       *
+;                                                                           *
+;2. O sistema de geracao de comida pode ser melhorado no sentido de nao     *
+;   existirem bugs associados a este quando mudamos para arenas mais        *
+;   pequenas ou quando uma comida e criada na mesma posicao da snake.       *
+;   fazendo-a desaparecer                                                   *
+;                                                                           *
+;3. Caso a snake toca-se nela propria morria, coisa que nao acontece ainda  *
+;                                                                           *
+;****************************************************************************
 
 org 100h
 include "emu8086.inc"  
@@ -51,10 +60,6 @@ down    equ     50h
 cur_dir db      right  
 
 
-;variavel auxiliar para o ticker
-wait_time dw 0 
-
-
 x_coord equ 49  ;constante que guarda o valor da coordenada x do limite direito da arena
 y_coord db 0  ;usada para o guardar o valor da coordenada y do limite baixo da arena que muda consoante a dificuldade
 
@@ -64,55 +69,58 @@ fruity db 0
 
 score db 0 
   
-;MACROS PARA ESCREVER NUMEROS
+;MACROS PARA ESCREVER NUMEROS GUARDADOS EM REGISTOS
 DEFINE_PRINT_NUM
 DEFINE_PRINT_NUM_UNS
                
 
 ;MENSAGENS DO JOGO  
  
-main 	db  09h,"  _______ _             _____             _         ", 0dh,0ah
-        db  09h," |__   __| |           / ____|           | |        ", 0dh,0ah
-        db  09h,"    | |  | |__   ___  | (___  _ __   __ _| | _____  ", 0dh,0ah
-        db  09h,"    | |  | '_ \ / _ \  \___ \| '_ \ / _` | |/ / _ \ ", 0dh,0ah
-        db  09h,"    | |  | | | |  __/  ____) | | | | (_| |   <  __/ ", 0dh,0ah
-        db  09h,"   _|_|_ |_| |_|\___| |_____/|_| |_|\__,_|_|\_\___| ", 0dh,0ah
-        db  09h,"  / ____|                    | |                    ", 0dh,0ah
-        db  09h," | |  __  ____ _ __ ___   ___| |                    ", 0dh,0ah
-        db  09h," | | |_ |/ _  | '_ ` _ \ / _ \ |                    ", 0dh,0ah
-        db  09h," | |__| | (_| | | | | | |  __/_|                    ", 0dh,0ah
-        db  09h,"  \_____|\__,_|_| |_| |_|\___(_)                    ", 0dh,0ah
+main    db  09h,09h," |__   __| |           / ____|           | |        ", 0dh,0ah
+        db  09h,09h,"    | |  | |__   ___  | (___  _ __   __ _| | _____  ", 0dh,0ah
+        db  09h,09h,"    | |  | '_ \ / _ \  \___ \| '_ \ / _` | |/ / _ \ ", 0dh,0ah
+        db  09h,09h,"    | |  | | | |  __/  ____) | | | | (_| |   <  __/ ", 0dh,0ah
+        db  09h,09h,"   _|_|_ |_| |_|\___| |_____/|_| |_|\__,_|_|\_\___| ", 0dh,0ah
+        db  09h,09h,"  / ____|                    | |                    ", 0dh,0ah
+        db  09h,09h," | |  __  ____ _ __ ___   ___| |                    ", 0dh,0ah
+        db  09h,09h," | | |_ |/ _  | '_ ` _ \ / _ \ |                    ", 0dh,0ah
+        db  09h,09h," | |__| | (_| | | | | | |  __/_|                    ", 0dh,0ah
+        db  09h,09h,"  \_____|\__,_|_| |_| |_|\___(_)                    ", 0dh,0ah
 	    
-	    db  "Regras:",09h,"                                  ", 0dh,0ah 
 	    
-	    db 0ah,0FEh,"Come tudo que estiver no ecra", 0dh,0ah	
-	    db 0FEh,"Pressiona UP ARROW para te movimentares para cima", 0dh,0ah
-	    db 0FEh,"Pressiona DOWN ARROW para te movimentares para baixo", 0dh,0ah
-	    db 0FEh,"Pressiona LEFT ARROW para te movimentares para a esquerda", 0dh,0ah	
-	    db 0FEh,"Pressiona RIGHT ARROW para te movimentares para a direita", 0dh,0ah
-	    db 0FEh,"Pressiona ESC para saires do jogo!", 0dh,0ah
+	    
+	    db 0dh,0ah,0ah,"Bem-vindo ao flavi snake v1.0, nota que e possivel que existam alguns bugs associados a geracao de comida mas de qualquer das formas espero que te divirtas!", 0dh,0ah
+	    
+	    db 0dh,0ah,"Regras:", 0dh,0ah	    	
+	    db 0FEh,"Pressiona UP,DOWN,LEFT e RIGHT ARROW para te movimentares", 0dh,0ah
+	    db 0FEh,"Pressiona ESC para saires do jogo!", 0dh,0ah 
+	    db 0FEh,"Come tudo que estiver no ecra e ganha pontos!!", 0dh,0ah
 	     	    
-	    db 0ah,0Fh," Selecione uma dificuldade: ", 0dh,0ah
-	    db 10h,"Facil (f) ",1ah," Tamanho da Arena: 50x22",0dh,0ah  
-	    db 10h,"Medio (m) ",1ah," Tamanho da Arena: 50x17",0dh,0ah
-	    db 10h,"Dificl (d) ",1ah," Tamanho da Arena: 50x12",0dh,0ah
+	    db 0dh,0ah ,10h,"Arena1 (1) ",1ah," Tamanho da Arena: 50x22",0dh,0ah  
+	    db 10h,"Arena2 (2) ",1ah," Tamanho da Arena: 50x19",0dh,0ah
+	    db 10h,"Arena3 (3) ",1ah," Tamanho da Arena: 50x16",0dh,0ah
 	    
-	    db "Escolha: $"
+	    db 0Fh," Escolhe uma arena: ", "$"
 
 
-modo_facil    db 09h,20h,20h,20h,20h,0AEh,0AEh,20h, "MODO FACIL (50x22)",20h,0AFh,0AFh, 0dh,0ah 
-              db 0feh," Pontos: ", 09h,09h,09h,020h,020h,20h,20h,20h,20h, "Boa sorte!",02h,"$"
+modo_facil    db 09h,20h,20h,20h,20h,0AEh,0AEh,20h, "ARENA 1 (50x22)",20h,0AFh,0AFh, 0dh,0ah,"$" 
+                      
+modo_medio    db 09h,20h,20h,20h,20h,0AEh,0AEh,0AEh,20h, "ARENA 2 (50x19)",20h,0AFh,0AFh,0AFh, 0dh,0ah,"$"               
               
-modo_medio    db 09h,20h,20h,20h,20h,0AEh,0AEh,0AEh,20h, "MODO MEDIO (50x17)",20h,0AFh,0AFh,0AFh, 0dh,0ah 
-              db 0feh," Pontos: ", 09h,09h,09h,020h,020h,20h,20h,20h,20h, "Boa sorte!",02h,"$"
+modo_dificil  db 09h,20h,20h,20h,20h,0AEh,0AEh,0AEh,0AEh,20h, "ARENA 3 (50x16)",20h,0AFh,0AFh,0AFh,0AFh, 0dh,0ah,"$" 
               
-modo_dificil  db 09h,20h,20h,20h,20h,0AEh,0AEh,0AEh,0AEh,20h, "MODO DIFICIL (50x12)",20h,0AFh,0AFh,0AFh,0AFh, 0dh,0ah 
-              db 0feh," Pontos: ", 09h,09h,09h,020h,020h,20h,20h,20h,20h, "Boa sorte!",02h,"$"
               
-              ;50x 
-COL1          db 0dh,0ah,0c9h,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0bbh,"$"
-COL2          db 0dh,0ah,0bah,09h,09h,09h,09h,09h,09h,20h,0bah,"$"
-COL3          db 0dh,0ah,0c8h,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0bch,"$"
+              ;47x simbolos                                                                                                                                                                                                                                                                  ;daqui para a frente tem haver com a tabela de pontos
+COL1          db 0dh,0ah,0c9h,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0bbh, 09h,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,"$"
+COL2          db 0dh,0ah,0bah,09h,09h,09h,09h,09h,09h,20h,0bah,09h,0B1H,09h,09h,20h,20h,20h,20h,20h,0B1H ,"$"
+COL3          db 0dh,0ah,0c8h,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0cdh,0bch, 09h,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,0B1H,"$"
+
+
+INFO1          db    " *TABELA DE PONTOS*$"
+INFO2          db 10h," Pontos: $"
+INFO3          db 10h," Boa sorte! ",02h,"$" 
+INFO4          db     "_Flavi snake v1.0_$"
+
 
 
 GAME_OVER     db 0dh,0ah,0ah,0ah,0ah,0ah,0ah,0ah,09h,09h,"  ___   __   _  _  ____     __   _  _  ____  ____ ", 0dh,0ah 
@@ -125,9 +133,67 @@ GAME_OVER     db 0dh,0ah,0ah,0ah,0ah,0ah,0ah,0ah,09h,09h,"  ___   __   _  _  ___
               
               db 0ah,0ah,0ah,09h,09h,0AEh,0AEh,0AEh, " Jogo realizado por: Bruno Medeiros ",0AFh,0AFh,0AFh,"$"
 
+                   
+                   
+;Funcao responsavel por escrever dentro da tabela de pontuacao
+
+PRINT_TABLE proc
+    
+MOV DL, 57
+MOV DH, 6
+
+;Funcao que define a posicao do cursor com base no registo DX
+MOV     AH, 02h  
+INT     10h
+
+;INT para escrever na tabela de pontos
+MOV AH, 9         
+LEA DX, INFO1
+INT 21H
+
+;Definicao de coordenadas para o cursor
+MOV DL, 57
+MOV DH, 9
+
+;Funcao que define a posicao do cursor com base no registo DX
+MOV     AH, 02h  
+INT     10h   
+
+MOV AH, 9         
+LEA DX, INFO2
+INT 21H  
+
+MOV DL, 57
+MOV DH, 12
+
+;Funcao que define a posicao do cursor com base no registo DX
+MOV     AH, 02h  
+INT     10h   
+
+MOV AH, 9         
+LEA DX, INFO3
+INT 21H
 
 
-  
+MOV DL, 58
+MOV DH, 15
+
+;Funcao que define a posicao do cursor com base no registo DX
+MOV     AH, 02h  
+INT     10h   
+
+MOV AH, 9         
+LEA DX, INFO4
+INT 21H
+
+ret
+
+PRINT_TABLE endp     
+
+
+
+
+      
 MENU:
 
 
@@ -160,14 +226,14 @@ ARENA:
 ;para sabermos que tecla foi pressionada, caso nao tenha
 ;sido qualquer das pretendidas volta a mostrar o menu novamente
   
-CMP DL, 'f'
-JE FACIL
+CMP DL, '1'
+JE ARENA1
 
-CMP Dl, 'm'
-JE MEDIO
+CMP Dl, '2'
+JE ARENA2
 
-CMP Dl, 'd'
-JE DIFICIL
+CMP Dl, '3'
+JE ARENA3
 
 JNE MENU
 RET
@@ -175,9 +241,9 @@ RET
 
 
 
-;** MODO FACIL POSSUI UMA ARENA MAIOR 50x22 **
+;** ARENA 50x22 **
 
-FACIL: 
+ARENA1: 
 
 
 ;INT para escrever no ecra
@@ -206,6 +272,10 @@ MOV AH,9
 LEA DX,COL3
 INT 21H
 
+;funcao para escrever dentro da tabela
+call PRINT_TABLE                      
+
+
 MOV CX, 1; Definimos 1 no contador para saber que e a 1x que vai fazer loop
 
  
@@ -213,7 +283,7 @@ MOV CX, 1; Definimos 1 no contador para saber que e a 1x que vai fazer loop
 
 mov y_coord, 22     ;22 pois e o tamanho definido da arena
 
-add y_coord, 2      ;adicionamos 2 pois esse e o offset so a partir do y=2 e que comeca a ser desenhada a arena antes temos y=0 e y=1
+add y_coord, 1      ;adicionamos 1 pois esse e o offset da arena
 
 
 JMP GAME  
@@ -222,9 +292,9 @@ JMP GAME
 
 
  
-;** MODO MEDIO POSSUI UMA ARENA 50x17 **
+;** ARENA 50x19 **
     
-MEDIO:
+ARENA2:
 
 MOV AH, 9         
 LEA DX, modo_medio
@@ -235,7 +305,7 @@ MOV AH,9
 LEA DX,COL1
 INT 21H
 
-MOV CX, 15
+MOV CX, 17
 
 TABULEIRO2:
     
@@ -250,14 +320,16 @@ MOV AH,9
 LEA DX,COL3
 INT 21H   
 
+call PRINT_TABLE  
+
 MOV CX, 1
 
 
 ;Guarda na variavel y_coord a coordenada y do limite baixo desta arena
 
-mov y_coord, 17   
+mov y_coord, 19   
 
-add y_coord, 2      ;adicionamos 2 pois esse e o offset so a partir do y=2 e que comeca a ser desenhada a arena antes temos y=0 e y=1
+add y_coord, 1     
 
 
 JMP GAME 
@@ -266,9 +338,9 @@ JMP GAME
 
 
 
-;**  MODO DIFICIL POSSUI UMA ARENA 50x12 **
+;** ARENA 50x16 **
 
-DIFICIL:
+ARENA3:
 
 MOV AH, 9         
 LEA DX, modo_dificil
@@ -278,7 +350,7 @@ MOV AH,9
 LEA DX,COL1
 INT 21H
 
-MOV CX, 10
+MOV CX, 14
 
 TABULEIRO3: 
 
@@ -292,15 +364,16 @@ MOV AH,9
 LEA DX,COL3
 INT 21H
 
+call PRINT_TABLE  
 
 MOV CX, 1
 
 
 ;Guarda na variavel y_coord a coordenada y do limite baixo desta arena
 
-mov y_coord, 12     
+mov y_coord, 16     
 
-add y_coord, 2      ;adicionamos 2 pois esse e o offset so a partir do y=2 e que comeca a ser desenhada a arena antes temos y=0 e y=1
+add y_coord, 1      
 
 
 JMP GAME
@@ -316,6 +389,7 @@ JMP GAME
 ;#         (APENAS E EXECUTADA UMA VEZ)                 #
 ;#                                                      #
 ;########################################################
+
                                                    
 COORD:                                             
 
@@ -374,6 +448,7 @@ MOV     tail, AX                    ;guarda a cauda
 CALL    move_snake  ;chamada da funcao move_snake
 
 
+
 ;##################################
 ;                                 #
 ; *** Esconde a cauda antiga ***  #
@@ -387,7 +462,6 @@ INT     10h
 
 MOV     al, ' ' ;Escrever '' significa que estamos a esconder a cauda da snake 
 MOV     ah, 09h  
-
 MOV     cx, 1   ;numero de vezes que vamos escrever
 INT     10h
 
@@ -423,23 +497,11 @@ MOV     cur_dir, ah
 
 
 
-;Instrucao responsavel por definir um ticker para dar loop no jogo
+;Instrucao responsavel por resetar o contado
 
 no_key:  
 
-;Funcao para receber o timer do sistema
-MOV     ah, 00h
-INT     1ah        
-
-;Comparamos o tempo com o wait_time:
-CMP     dx, wait_time
-JB      check_for_key;Da jump se o dx estiver abaixo de wait_time(CF=1)
-
-;add     dx, 4
-MOV     wait_time, dx  ;variavel wait time fica com o valor do registo dx
-
 MOV CX, 0
-
 JMP     GAME   
 
 
@@ -598,16 +660,20 @@ INT 21H
 
 
 ;dividir o valor obtido de DH por 3 uma vez que gera numeros entre 0 a 99
-MOV AX, DX
+ 
+MOV AL,DL
+MOV AH,0
+
 MOV BX,3
 
 XOR DX, DX; DX=0
 
-DIV BX ; 0-99/ 3 onde o resto fica em AH (numero maximo que pode ser gerado 99/3 = 33 
+DIV BX ; 0-99/ 3 onde o resto fica em AH (numero maximo que pode ser gerado 99/3 = 33  => compativel com todas as arenas
 
-MOV BL, x_coord   ;46
-SUB BL, AH        ;46-resto=x da comid
-DEC BL
+MOV BL, x_coord   ;46  
+DEC BL  ; para quando resto for igual a 0 nao spawnar no limite da arena
+
+SUB BL, AL        ;45-resto=x da comid
 
 
 ;Atribuimos esse valor como sendo coordenada x da comida
@@ -626,18 +692,20 @@ INT 21H
 
 
 ;dividir o valor obtido de DH por 3 uma vez que gera numeros entre 0 a 99
-MOV AX, DX
-
-MOV BX,5
+MOV AL,DL
+MOV AH,0          
+          
+MOV BX,7     ;99/7 (n maximo gerado = 14 => e compativel com todas as arenas
 
 XOR DX, DX; DX=0
 
 DIV BX ; 0-99/ 10 onde o resto fica em AH  
 
                                                                    
-MOV BL, y_coord
-SUB BL, AH       ;46-resto=x da comida
+MOV BL, y_coord            
 DEC BL
+
+SUB BL, AL       ;46-resto=x da comida
 
 MOV fruity, BL 
 
@@ -662,7 +730,8 @@ INT     10h
 
 DEC CX
 
-ret
+ret 
+
 fruitgeneration endp
 
 
@@ -696,8 +765,8 @@ INT 21h
 ;incrementa o score
 inc score
 
-MOV DL, 9
-MOV DH, 1
+MOV DL, 66
+MOV DH, 9
 
 ;Funcao que define a posicao do cursor com base no registo DX
 MOV     AH, 02h  
@@ -716,44 +785,6 @@ RET
 
 
 
-;proc timer
-          
-;GET SYSTEM TIME.
-  ;mov  ah, 2ch
-  ;int  21h ;RETURN SECONDS IN DH.  
-  
-  
-;CHECK IF ONE SECOND HAS PASSED. 
-  ;cmp  dh, seconds
-  ;je   no_change  
-  
-  
-;IF NO JUMP, ONE SECOND HAS PASSED. VERY IMPORTANT : PRESERVE SECONDS TO
-;USE THEM TO COMPARE WITH NEXT SECONDS. THIS IS HOW WE KNOW ONE SECOND
-;HAS PASSED.
- 
-  ;mov  seconds, dh  
-  
-  
-;DISPLAY TEXT EVERY SECOND.
-;MOV DL, 32
-;MOV DH, 1
-
-;Funcao que define a posicao do cursor com base no registo DX
-;MOV     AH, 02h  
-;INT     10h
-
-
-;Funcao que escreve no ecra score
-;mov ah, seconds 
-
-;call print_num   
-  
-;no_change:    
-;ret           
-;timer endp    
-
-
 
 
 ;Intrucao que apresenta a mensagem de GameOver
@@ -765,11 +796,10 @@ GameOver:
 MOV AL, 03H
 MOV AH, 0
 INT 10H	
-
-
+  
 MOV AH,9    
 LEA DX,GAME_OVER
-INT 21H   
+INT 21H 
 
 ;coordenadas para apresentar o score
 MOV DL, 43
@@ -783,5 +813,6 @@ INT     10h
 MOV ah, score 
 CALL print_num
 
+INT 20h 
 
 END         
