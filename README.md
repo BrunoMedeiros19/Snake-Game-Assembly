@@ -1,6 +1,6 @@
 # Snake Game :snake:	
 
-**This program was made using Emu8086 and written in Assembly language. ** 
+**This program was made using Emu8086 and written in Assembly language.** 
 
 ## Game Desciption
 
@@ -10,11 +10,11 @@ You can leave at anytime just clicking ***`ESC`***.
 
 ## Features
 
-- **`DONE`**UI MENU for arena selection!** 
-- **`DONE`**SCORE UI** 
-- **`DONE`**Player Movement**
-- **`DONE`**Death System** 
-- **`DONE`**Regenaration fuction for the food.**
+- **`DONE`** UI MENU for arena selection!** 
+- **`DONE`** SCORE UI** 
+- **`DONE`** Player Movement**
+- **`DONE`** Death System** 
+- **`DONE`** Regenaration fuction for the food.**
 
 ## Observations
 
