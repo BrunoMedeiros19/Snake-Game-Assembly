@@ -4,7 +4,7 @@
 
 ## Game Desciption
 
-The goal of this game is to eat the food that is generating in the arena! You can move by pressing ***``*** **UP**,**DOWN**,**LEFT** and **RIGHT** arrows.
+The goal of this game is to eat the food that is generating in the arena! You can move by pressing **UP**,**DOWN**,**LEFT** and **RIGHT** arrows.
 You can leave at anytime just clicking ***`ESC`***.
 
 
