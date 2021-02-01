@@ -10,11 +10,11 @@ You can leave at anytime just clicking ***`ESC`***.
 
 ## Features
 
-- **`DONE`** UI MENU for arena selection!** 
-- **`DONE`** SCORE UI** 
-- **`DONE`** Player Movement**
-- **`DONE`** Death System** 
-- **`DONE`** Regenaration fuction for the food.**
+- **`DONE`** UI MENU for arena selection! 
+- **`DONE`** SCORE UI.
+- **`DONE`** Player Movement.
+- **`DONE`** Death System.
+- **`DONE`** Regenaration fuction for the food.
 
 ## Observations
 
